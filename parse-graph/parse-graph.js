@@ -9,11 +9,13 @@ if (process.argv.length != 3) {
 }
 var fname = process.argv[2];
 
-parser.parseFileOrUrl(fname, function(err, rootNode) {
-  if (err) {
-    console.error("Error: " + err);
-  } else {
+try {
+  parser.parseFileOrUrl(fname, function(err, rootNode) {
+    if (err) throw new Error(err);
     validator.validate(rootNode);
-  }
-  process.exit(err ? 1 : 0);
-});
+  });
+} catch (e) {
+  console.error("Error: " + e.message);
+  process.exit(1);
+}
+console.log("Validated");

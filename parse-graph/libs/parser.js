@@ -32,7 +32,7 @@ function parseFile(fname, callback) {
 
 function parseString(xml, callback) {
   (new xml2js.Parser({
-    explicitArray: true,
+    explicitArray: false,
     normalizeTags: true
   })).parseString(xml, callback);
 }

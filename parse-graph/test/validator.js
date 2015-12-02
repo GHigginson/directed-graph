@@ -11,7 +11,7 @@ describe('Validator', function() {
   describe('Positive Tests', function() {
 
     it('should accept the minimal well-formed xml...', function(done) {
-      assertValid('valid.xml', done);
+      assertValid('minimal.xml', done);
     });
 
     it('should accept a typical well-formed xml...', function(done) {
@@ -61,9 +61,7 @@ function assertInvalid(fname, done) {
     try {
       validator.validate(node);
       valid = true;
-    } catch (e) {
-      console.log(e);
-    }
+    } catch (e) {}
     assert(!valid, "Validation succeeded unexpectedly");
     done();
   });
