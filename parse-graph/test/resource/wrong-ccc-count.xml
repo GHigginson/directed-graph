@@ -1,0 +1,8 @@
+<aaa>
+  <bbb>
+    <ccc />
+    <ccc />
+    <ccc />
+  </bbb>
+  <bbb><ccc/></bbb>
+</aaa>
