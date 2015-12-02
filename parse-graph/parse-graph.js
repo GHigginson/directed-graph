@@ -5,14 +5,15 @@ var parser = require('./libs/parser.js'),
 
 if (process.argv.length != 3) {
   console.log('Usage: parse-graph.js <url-or-file>');
-  process.exit();
+  process.exit(1);
 }
 var fname = process.argv[2];
 
-parser.parseFile(fname, function(err, rootNode) {
+parser.parseFileOrUrl(fname, function(err, rootNode) {
   if (err) {
-    console.error("Invalid XML: " + err);
+    console.error("Error: " + err);
   } else {
     validator.validate(rootNode);
   }
+  process.exit(err ? 1 : 0);
 });
