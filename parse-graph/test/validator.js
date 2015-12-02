@@ -9,25 +9,62 @@ var should = require('chai').should(),
 describe('Validator', function() {
 
   describe('Positive Tests', function() {
-    it('Should Accept...', function(done) {
-      assert(true); // TODO
-      done();
+
+    it('should accept the minimal well-formed xml...', function(done) {
+      assertValid('valid.xml', done);
     });
+
+    it('should accept a typical well-formed xml...', function(done) {
+      assertValid('valid.xml', done);
+    });
+
   });
 
   describe('Negative Tests', function() {
-    it('Should Reject...', function(done) {
-      parser.parseFile(__dirname + '/resource/wrong-ccc-count.xml', function (err, node) {
-        // TODO: extract to helper method
-        try {
-          validator.validate(node);
-          assert(false);
-        } catch (e) {
-          assert(true);
-        }
-        done();
-      });
+
+    it('should reject duplicated ids...', function(done) {
+      assertInvalid('duplicate-id.xml', done);
     });
+
+    it('should reject empty nodes list...', function(done) {
+      assertInvalid('empty-nodes.xml', done);
+    });
+
+    it('should reject undeclared nodes in edges...', function(done) {
+      assertInvalid('unknown-node.xml', done);
+    });
+
+    it('should reject negative cost...', function(done) {
+      assertInvalid('negative-cost.xml', done);
+    });
+
+    it('should reject malformed edge...', function(done) {
+      assertInvalid('malformed-edge.xml', done);
+    });
+
   });
 
 });
+
+function assertValid(fname, done) {
+  parser.parseFile(__dirname + '/resource/' + fname, function (err, node) {
+    assert(!err, "Error loading resource file: " + err);
+    validator.validate(node);
+    done();
+  });
+}
+
+function assertInvalid(fname, done) {
+  parser.parseFile(__dirname + '/resource/' + fname, function (err, node) {
+    assert(!err, "Error loading resource file: " + err);
+    var valid = false;
+    try {
+      validator.validate(node);
+      valid = true;
+    } catch (e) {
+      console.log(e);
+    }
+    assert(!valid, "Validation succeeded unexpectedly");
+    done();
+  });
+}

@@ -1,0 +1,15 @@
+<graph>
+  <id>g0</id>
+  <name>The Graph Name</name>
+  <nodes>
+    <node>
+      <id>a</id>
+      <name>A name</name>
+    </node>
+    <node>
+      <id>a</id>
+      <name>B name</name>
+    </node>
+  </nodes>
+  <edges />
+</graph>

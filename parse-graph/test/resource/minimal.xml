@@ -1,0 +1,8 @@
+<graph>
+  <id>A</id>
+  <name>B</name>
+  <nodes>
+    <node><id>C</id></node>
+  </nodes>
+  <edges/>
+</graph>

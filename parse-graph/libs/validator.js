@@ -28,10 +28,7 @@ Validator.prototype.hasMany = function(node, child, count) {
 }
 
 function validate(node) {
-  (new Validator())
-      .hasA(node, 'aaa')
-      .hasOne(node.aaa, 'bbb')
-      .hasMany(node.aaa.bbb, 'ccc', 2);
+  (new Validator()); // TODO
 }
 
 module.exports = {

@@ -1,0 +1,20 @@
+<graph>
+  <id>g0</id>
+  <name>Malformed Edge</name>
+  <nodes>
+    <node>
+      <id>a</id>
+      <name>node name</name>
+    </node>
+  </nodes>
+  <edges>
+    <edge>
+      <id>e1</id>
+      <to>b</to>
+    </edge>
+    <edge>
+      <id>e2</id>
+      <from>a</from>
+    </edge>
+  </edges>
+</graph>
