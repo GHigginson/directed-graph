@@ -1,0 +1,16 @@
+{
+  "name": "query-graph",
+  "version": "1.0.0",
+  "description": "Queries graph data according to request on stdin.",
+  "main": "query-graph.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "dependencies":{
+    "lodash": "~3.10.0"
+  },
+  "devDependencies": {
+    "mocha": "~2.2.5",
+    "chai": "~3.2.0"
+  }
+}
