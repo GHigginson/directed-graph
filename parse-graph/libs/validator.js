@@ -70,19 +70,13 @@ Validator.prototype.isNotNegative = function(cval) {
 }
 
 Validator.prototype.each = function(array, method) {
-  var captured;
   if (_.isArray(array)) {
     array.forEach(function (element) {
-      try {
-        method(element);
-      } catch (e) {
-        captured = e;
-      }
+      method(element);
     });
   } else if (array) {
     method(array);
   }
-  if (captured) throw captured;
   return this;
 }
 
