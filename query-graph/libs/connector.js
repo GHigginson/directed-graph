@@ -1,9 +1,16 @@
 'use strict';
-
+/* Connector
+ *
+ * Wrapper for pg client with convenience methods for processing the datasource
+ * config, and query batching
+ */
 var util = require('util'),
     pg = require('pg'),
     async = require('async');
 
+/**
+ * Generates a connect-string from the datasource config
+ */
 function toUri(config) {
   return util.format(
       "postgres://%s:%s@%s:%d/%s",
@@ -15,6 +22,9 @@ function toUri(config) {
   );
 }
 
+/**
+ * Establishes a new connection, then calls callback(err, client)
+ */
 function connect(config, callback) {
   var client = new pg.Client(toUri(config));
   client.connect(function(err) {
@@ -22,6 +32,10 @@ function connect(config, callback) {
   });
 }
 
+/**
+ * Runs the requested queries, and calls calback(err, result) when all have
+ * completed.
+ */
 function queryAll(client, queries, callback) {
   var results = [];
   async.each(queries, function(query, done) {
