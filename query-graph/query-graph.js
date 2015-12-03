@@ -19,7 +19,7 @@ process.stdin.on('data', function(data) {
     if (err) throw err;
     connector.queryAll(client, queries, function(err, results) {
       if (err) throw err;
-      var response = responseBuilder.build(request, results);
+      var response = responseBuilder.build(queries, results);
       var json = JSON.stringify(response);
       console.log(json);
       process.exit(0);

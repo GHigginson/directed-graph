@@ -46,8 +46,8 @@ BEGIN
 
   -- Join back to the node table to return cid values
   RETURN QUERY SELECT a.cid, b.cid FROM vertices
-    INNER JOIN node a ON vertices.id = a.id
-    LEFT OUTER JOIN node b ON vertices.previous = b.id
+    LEFT_OUTER JOIN node a ON vertices.previous = a.id
+    INNER JOIN node b ON vertices.id = b.id
     ORDER BY distance DESC;
 END
 $$ LANGUAGE plpgsql;

@@ -25,7 +25,7 @@ function connect(config, callback) {
 function queryAll(client, queries, callback) {
   var results = [];
   async.each(queries, function(query, done) {
-    client.query(query, function (err, result) {
+    client.query(query.sql, function (err, result) {
       if (!err) results.push(result);
       done();
     });

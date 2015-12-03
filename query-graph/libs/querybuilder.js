@@ -7,18 +7,19 @@ function escape(s) {
 }
 
 function build(query) {
-  return util.format(
+  query.sql = util.format(
     "SELECT * FROM dijkstra('g1','%s')", // TODO: request doesn't specify graph
     escape(query.from)
   );
+  return query;
 }
 
 function buildAll(request) {
-  var sql = [];
+  var queries = [];
   request.queries.forEach(function(query) {
-    sql.push(build(query));
+    queries.push(build(query));
   });
-  return sql;
+  return queries;
 }
 
 module.exports = {
