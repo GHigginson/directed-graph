@@ -2,6 +2,10 @@
 
 module.exports = {
   "build" : function(request, results) {
-    // TODO
+    var response = { items : [] };
+    results.forEach(function (result) {
+      response.items.push(result);
+    });
+    return response;
   }
 };

@@ -3,14 +3,17 @@
  * a cycle is detected anywhere in the target graph.
  */
 CREATE OR REPLACE FUNCTION detect_cycle(
-  graphId INTEGER
+  graphId VARCHAR(8)
 ) RETURNS VOID AS $$
 BEGIN
-  PERFORM _build_spanning_tree(graphId, null, true);
+  PERFORM _build_spanning_tree(
+    (SELECT id FROM graph WHERE cid=graphId),
+    null,  -- no root node
+    true   -- halt on cycle
+  );
   RAISE NOTICE 'No cycles detected.';
 END
 $$ LANGUAGE plpgsql;
-
 
 /* Implementation of Didkstra's Algorithm for use by the query-graph utility
  * when finding lowest cost path.
@@ -24,24 +27,28 @@ $$ LANGUAGE plpgsql;
  *       [(a,b),(a,d),(b,c)]
  */
 CREATE OR REPLACE FUNCTION dijkstra(
-  graphId INTEGER,
-  rootNodeId INTEGER
+  graphId VARCHAR(8),
+  rootNodeId VARCHAR(8)
 ) RETURNS TABLE (source_node VARCHAR(8), dest_node VARCHAR(8)) AS $$
 DECLARE
   maxDistance real;
 BEGIN
   maxDistance := 1e37;
 
-  PERFORM _build_spanning_tree(graphId, rootNodeId, false);
+  PERFORM _build_spanning_tree(
+    (SELECT id FROM graph WHERE cid=graphId),
+    (SELECT id FROM node WHERE cid=rootNodeId),
+    true   -- halt on cycle
+  );
 
   -- Prune any nodes that are not reachable from the root
   DELETE FROM vertices WHERE distance=maxDistance;
 
   -- Join back to the node table to return cid values
   RETURN QUERY SELECT a.cid, b.cid FROM vertices
-     INNER JOIN node a ON vertices.id = a.id
-     LEFT OUTER JOIN node b ON vertices.previous = b.id
-     ORDER BY distance DESC;
+    INNER JOIN node a ON vertices.id = a.id
+    LEFT OUTER JOIN node b ON vertices.previous = b.id
+    ORDER BY distance DESC;
 END
 $$ LANGUAGE plpgsql;
 
@@ -103,7 +110,7 @@ BEGIN
       -- Recalculate minimum distance
       newDistance := vertex.distance + path.cost;
       IF (newDistance < path.distance) THEN
-	UPDATE vertices SET distance = newDistance, previous=vertex.id WHERE id=path.target_node_id;
+        UPDATE vertices SET distance = newDistance, previous=vertex.id WHERE id=path.target_node_id;
       END IF;
     END LOOP;
   END LOOP;
@@ -129,10 +136,10 @@ insert into edge values (1,'e1',1,2,1);
 insert into edge values (2,'e2',1,3,5);
 insert into edge values (3,'e3',2,3,1);
 
-select detect_cycle(1);  -- No Error
-select dijkstra(1,1); -- n3->n2->n1
-select dijkstra(1,4); -- n4
-select dijkstra(2,1); -- nothing (no such graph)
+select detect_cycle('g1');  -- No Error
+select dijkstra('g1','n1'); -- n3->n2->n1
+select dijkstra('g1','n4'); -- n4
+select dijkstra('g2','n1'); -- nothing (no such graph)
 */
 
 /*
@@ -144,7 +151,7 @@ insert into graph values (1, 'g1', 'g1');
 insert into node values (1,1,'n1','n1');
 insert into edge values (1,'e1',1,1,1);
 
-select detect_cycle(1);  -- Found cycle
+select detect_cycle('g1');  -- Found cycle
 */
 
 /*
@@ -163,8 +170,8 @@ insert into edge values (3,'e3',2,3,1);
 insert into edge values (4,'e4',2,1,1);
 insert into edge values (5,'e5',4,4,1);
 
-select detect_cycle(1);  -- Found cycle
-select detect_cycle(2);  -- Nothing
+select detect_cycle('g1');  -- Found cycle
+select detect_cycle('g2');  -- Nothing
 */
 
 

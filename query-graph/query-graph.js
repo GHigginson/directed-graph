@@ -10,17 +10,19 @@ if (process.argv.length != 2) {
   process.exit(1);
 }
 
-fs.readFile('config.json' , function(err, data) {
-  if (err) throw err
-  var config = JSON.parse(data);
-  process.stdin.on('data', function(data) {
-    var request = JSON.parse(data);
-    connector.connect(config, function (err, connection) {
+var config = JSON.parse(fs.readFileSync('config.json'));
+
+process.stdin.on('data', function(data) {
+  var request = JSON.parse(data);
+  var queries = queryBuilder.buildAll(request);
+  connector.connect(config, function (err, client) {
+    if (err) throw err;
+    connector.queryAll(client, queries, function(err, results) {
       if (err) throw err;
-      var queries = queryBuilder.buildAll(request);
-      var results = connection.queryAll(queries);
       var response = responseBuilder.build(request, results);
-      console.log(JSON.stringify(response));
+      var json = JSON.stringify(response);
+      console.log(json);
+      process.exit(0);
     });
   });
 });
