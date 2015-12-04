@@ -1,72 +1,24 @@
-﻿
-/* Cycle detection method that will immediately halt and raise an error if
+﻿-- REQUIRES: ./schema.sql
+
+/**
+ * Cycle detection method that will immediately halt and raise an error if
  * a cycle is detected anywhere in the target graph.
+ *
+ * Uses dijkstras algorithm to build a minimum spanning set of the graph,
+ * with an additional check for edges linking back into the spanned set.
  */
 CREATE OR REPLACE FUNCTION detect_cycle(
-  graphId VARCHAR(8)
+  graphCId VARCHAR(8)
 ) RETURNS VOID AS $$
-BEGIN
-  PERFORM _build_spanning_tree(
-    (SELECT id FROM graph WHERE cid=graphId),
-    null,  -- no root node
-    true   -- halt on cycle
-  );
-  RAISE NOTICE 'No cycles detected.';
-END
-$$ LANGUAGE plpgsql;
-
-/* Implementation of Didkstra's Algorithm for use by the query-graph utility
- * when finding lowest cost path.
- *
- * Returns a table of node cid pairs ordered by cost.
- *
- * eg:
- *       a--->b--->c
- *         \---->d
- * as:
- *       [(a,b),(a,d),(b,c)]
- */
-CREATE OR REPLACE FUNCTION dijkstra(
-  graphId VARCHAR(8),
-  rootNodeId VARCHAR(8)
-) RETURNS TABLE (source_node VARCHAR(8), dest_node VARCHAR(8)) AS $$
 DECLARE
-  maxDistance real;
-BEGIN
-  maxDistance := 1e37;
-
-  PERFORM _build_spanning_tree(
-    (SELECT id FROM graph WHERE cid=graphId),
-    (SELECT id FROM node WHERE cid=rootNodeId),
-    true   -- halt on cycle
-  );
-
-  -- Prune any nodes that are not reachable from the root
-  DELETE FROM vertices WHERE distance=maxDistance;
-
-  -- Join back to the node table to return cid values
-  RETURN QUERY SELECT a.cid, b.cid FROM vertices
-    LEFT_OUTER JOIN node a ON vertices.previous = a.id
-    INNER JOIN node b ON vertices.id = b.id
-    ORDER BY distance DESC;
-END
-$$ LANGUAGE plpgsql;
-
-
-/* Common pathway for the dijkstra and detect_cycle methods.
- * Attempts to process the target graph into a spanning tree/graph depending
- * on whether a root node was selected. If haltOnCycle is true an error will
- * be raised anytime an edge is detected leading back to the spanned set.
- */
-CREATE OR REPLACE FUNCTION _build_spanning_tree(graphId integer, rootNodeId integer, haltOnCycle boolean)
-RETURNS VOID AS $$
-DECLARE
+  graphId INTEGER;
   vertex RECORD;
   path RECORD;
   newDistance REAL;
   maxDistance REAL;
 BEGIN
   maxDistance := 1e37;
+  graphId := (SELECT id FROM graph WHERE cid=graphCId);
 
   -- Initialize vertices with all edges in this graph, with no parent and max distance
   CREATE TEMP TABLE IF NOT EXISTS vertices (
@@ -75,11 +27,10 @@ BEGIN
     previous INTEGER,
     spanned BOOLEAN
   ) ON COMMIT DROP;
-  DELETE FROM vertices;
   INSERT INTO vertices SELECT node.id, maxDistance, null, false FROM node WHERE graph_id = graphId;
 
   -- Zero out distance for all root nodes
-  UPDATE vertices SET distance = 0.0 WHERE rootNodeId IS NULL OR id=rootNodeId;
+  UPDATE vertices SET distance = 0.0;
 
   -- Loop until all nodes have been spanned
   LOOP
@@ -98,11 +49,11 @@ BEGIN
     LOOP
 
       -- Cycle detection (if enabled)
-      IF (haltOnCycle AND path.source_node_id = path.target_node_id) THEN
+      IF (path.source_node_id = path.target_node_id) THEN
         RAISE EXCEPTION 'Cycle detected [%..%]',
             path.source_node_id, path.target_node_id;
       END IF;
-      IF (haltOnCycle AND EXISTS (SELECT * FROM vertices WHERE id = path.target_node_id AND spanned=true)) THEN
+      IF (EXISTS (SELECT * FROM vertices WHERE id = path.target_node_id AND spanned=true)) THEN
         RAISE EXCEPTION 'Cycle detected [%..%..%]',
             path.target_node_id, path.source_node_id, path.target_node_id;
       END IF;
@@ -116,7 +67,6 @@ BEGIN
   END LOOP;
 END
 $$ LANGUAGE plpgsql;
-
 
 /*************
 * Test Cases *
@@ -137,9 +87,6 @@ insert into edge values (2,'e2',1,3,5);
 insert into edge values (3,'e3',2,3,1);
 
 select detect_cycle('g1');  -- No Error
-select dijkstra('g1','n1'); -- n3->n2->n1
-select dijkstra('g1','n4'); -- n4
-select dijkstra('g2','n1'); -- nothing (no such graph)
 */
 
 /*
