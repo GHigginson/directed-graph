@@ -1,70 +1,57 @@
 ﻿-- REQUIRES: ./schema.sql
 
 /**
- * Cycle detection method that will immediately halt and raise an error if
- * a cycle is detected anywhere in the target graph.
+ * Returns true if a cycle is detected anywhere in the target graph, else false
  *
- * Uses dijkstras algorithm to build a minimum spanning set of the graph,
- * with an additional check for edges linking back into the spanned set.
+ * Since all of the nodes in the graph are known in advance, can simply recurse
+ * all children, and conclude if the depth ever exceeds the total node count.
  */
-CREATE OR REPLACE FUNCTION detect_cycle(
+CREATE OR REPLACE FUNCTION contains_cycle(
   graphCId VARCHAR(8)
-) RETURNS VOID AS $$
+) RETURNS BOOLEAN AS $$
 DECLARE
   graphId INTEGER;
-  vertex RECORD;
-  path RECORD;
-  newDistance REAL;
-  maxDistance REAL;
+  nodeId INTEGER;
+  nodeCount INTEGER;
+  cycle BOOLEAN;
 BEGIN
-  maxDistance := 1e37;
   graphId := (SELECT id FROM graph WHERE cid=graphCId);
+  nodeCount := (SELECT count(1) FROM node WHERE graph_id=graphId);
 
-  -- Initialize vertices with all edges in this graph, with no parent and max distance
-  CREATE TEMP TABLE IF NOT EXISTS vertices (
-    id INTEGER,
-    distance REAL,
-    previous INTEGER,
-    spanned BOOLEAN
-  ) ON COMMIT DROP;
-  INSERT INTO vertices SELECT node.id, maxDistance, null, false FROM node WHERE graph_id = graphId;
-
-  -- Zero out distance for all root nodes
-  UPDATE vertices SET distance = 0.0;
-
-  -- Loop until all nodes have been spanned
+  FOR nodeId IN
+    SELECT id FROM node WHERE graph_id=graphId
   LOOP
-
-    -- Find vertex closest to the spanned set, or exit
-    SELECT * INTO vertex FROM vertices WHERE spanned=false ORDER BY distance ASC LIMIT 1;
-    IF (vertex IS NULL) THEN
-       EXIT;
+    IF (_contains_cycle(nodeId, nodeCount, 0)) THEN
+      RETURN TRUE;
     END IF;
-
-    -- Add to spanned set and adjust distance of all neighbors
-    UPDATE vertices SET spanned=true WHERE id = vertex.id;
-    FOR path IN
-      SELECT * FROM vertices INNER JOIN edge ON edge.target_node_id = vertices.id
-      WHERE edge.source_node_id=vertex.id
-    LOOP
-
-      -- Cycle detection (if enabled)
-      IF (path.source_node_id = path.target_node_id) THEN
-        RAISE EXCEPTION 'Cycle detected [%..%]',
-            path.source_node_id, path.target_node_id;
-      END IF;
-      IF (EXISTS (SELECT * FROM vertices WHERE id = path.target_node_id AND spanned=true)) THEN
-        RAISE EXCEPTION 'Cycle detected [%..%..%]',
-            path.target_node_id, path.source_node_id, path.target_node_id;
-      END IF;
-
-      -- Recalculate minimum distance
-      newDistance := vertex.distance + path.cost;
-      IF (newDistance < path.distance) THEN
-        UPDATE vertices SET distance = newDistance, previous=vertex.id WHERE id=path.target_node_id;
-      END IF;
-    END LOOP;
   END LOOP;
+
+  RETURN FALSE;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION _contains_cycle(
+  nodeId INTEGER,
+  maxDepth INTEGER,
+  currentDepth INTEGER
+) RETURNS BOOLEAN AS $$
+DECLARE
+  nextNodeId INTEGER;
+BEGIN
+
+  IF (maxDepth < currentDepth) THEN
+    RETURN TRUE;
+  END IF;
+
+  FOR nextNodeId IN
+    SELECT target_node_id FROM edge WHERE source_node_id=nodeId
+  LOOP
+    IF (_contains_cycle(nextNodeId, maxDepth, currentDepth + 1)) THEN
+      RETURN TRUE;
+    END IF;
+  END LOOP;
+
+  RETURN FALSE;
 END
 $$ LANGUAGE plpgsql;
 
@@ -86,7 +73,7 @@ insert into edge values (1,'e1',1,2,1);
 insert into edge values (2,'e2',1,3,5);
 insert into edge values (3,'e3',2,3,1);
 
-select detect_cycle('g1');  -- No Error
+select contains_cycle('g1');  -- false
 */
 
 /*
@@ -98,7 +85,7 @@ insert into graph values (1, 'g1', 'g1');
 insert into node values (1,1,'n1','n1');
 insert into edge values (1,'e1',1,1,1);
 
-select detect_cycle('g1');  -- Found cycle
+select contains_cycle('g1');  -- true
 */
 
 /*
@@ -117,8 +104,26 @@ insert into edge values (3,'e3',2,3,1);
 insert into edge values (4,'e4',2,1,1);
 insert into edge values (5,'e5',4,4,1);
 
-select detect_cycle('g1');  -- Found cycle
-select detect_cycle('g2');  -- Nothing
+select contains_cycle('g1');  -- true
+select contains_cycle('g2');  -- false
+*/
+
+/*
+-- BUG IN ORIGINAL SOLUTION
+delete from edge;
+delete from node;
+delete from graph;
+insert into graph values (1, 'g1', 'g1');
+insert into node values (1,1,'n1','n1');
+insert into node values (2,1,'n2','n2');
+insert into node values (3,1,'n3','n3');
+insert into node values (4,1,'n4','n4');
+insert into edge values (1,'e1',1,2,1);
+insert into edge values (2,'e2',1,3,1);
+insert into edge values (3,'e3',2,3,1);
+insert into edge values (4,'e4',4,1,1);
+
+select contains_cycle('g1');  -- false
 */
 
 
