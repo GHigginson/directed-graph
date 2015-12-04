@@ -40,7 +40,8 @@ function queryAll(client, queries, callback) {
   var results = [];
   async.each(queries, function(query, done) {
     client.query(query.sql, function (err, result) {
-      if (!err) results.push(result);
+      if (err) throw err;
+      else results.push(result);
       done();
     });
   }, function(err) {

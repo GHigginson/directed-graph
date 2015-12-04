@@ -227,7 +227,6 @@ select dijkstra('g1','n1','n3'); -- {n1,n2,n3,null}
 select dijkstra(null,'n1','n3'); -- {n1,n2,n3,null}
 select dijkstra('g1','n4','n3'); -- {null}
 select dijkstra('g2','n1', 'n2'); -- {null}
---select unnest(dijkstra('g1','n1','n3'));
 select recursive_path_search('g1', 'n1', 'n3') -- {n1,n3,null,n1,n2,n3,null}}
 */
 
@@ -263,9 +262,4 @@ select recursive_path_search('g1', 'n2', 'n3') -- {n2,n1,n3,NULL,n2,n3,NULL}
 select recursive_path_search(null, 'n2', 'n3') -- {n2,n1,n3,NULL,n2,n3,NULL}
 select recursive_path_search('g2', 'n2', 'n3') -- {NULL}
 */
-
-
-
-
-
 

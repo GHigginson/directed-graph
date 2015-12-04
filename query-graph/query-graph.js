@@ -27,7 +27,7 @@ process.stdin.on('data', function(data) {
 
       // Deliver response as json on stdout
       var response = responseBuilder.build(queries, results);
-      var json = JSON.stringify(response);
+      var json = JSON.stringify(response, null, 2);
       console.log(json);
       process.exit(0);
     });

@@ -11,8 +11,8 @@ describe('Response Builder', function() {
 
     it('Should return false when no result', function(done) {
       var answer = builder.buildAnswer(
-        { type:'cheapest', from: 'x', to: 'y' },
-        { rows: [ ] }
+        { type: 'cheapest', from: 'x', to: 'y' },
+        { rows: [ { id: null } ] }
       );
 
       assert(answer.path === false);
@@ -21,8 +21,8 @@ describe('Response Builder', function() {
 
     it('Should return path of length one when to=from', function(done) {
       var answer = builder.buildAnswer(
-        { type:'cheapest', from: 'a', to: 'a' },
-        { rows: [ { source_node: null, dest_node: 'a' } ] }
+        { type: 'cheapest', from: 'a', to: 'a' },
+        { rows: [ { id: 'a' }, { id: null } ] }
       );
 
       assert(areEqual(answer.path, ['a']));
@@ -31,18 +31,19 @@ describe('Response Builder', function() {
 
     it('Should return cheapest path', function(done) {
       var answer = builder.buildAnswer(
-        { type:'cheapest', from: 'a', to: 'd' },
+        { type: 'cheapest', from: 'a', to: 'd' },
         {
           rows: [
-            { source_node: null, dest_node: 'a' },
-            { source_node: 'a', dest_node: 'b' },
-            { source_node: 'a', dest_node: 'c' },
-            { source_node: 'b', dest_node: 'd' }
+            { id: 'a' },
+            { id: 'b' },
+            { id: 'c' },
+            { id: 'd' },
+            { id: null },
           ]
         }
       );
 
-      assert(areEqual(answer.path, ['a', 'b', 'd']));
+      assert(areEqual(answer.path, ['a', 'b', 'c', 'd']));
       done();
     });
 
@@ -52,18 +53,40 @@ describe('Response Builder', function() {
 
   describe('Query Paths', function() {
 
-    it('Should assemble all paths', function(done) {
+    it('Should return false when no result', function(done) {
+      var answer = builder.buildAnswer(
+        { type: 'paths', from: 'x', to: 'y' },
+        { rows: [ { id: null } ] }
+      );
 
-
-      assert(false);
+      assert(answer.paths === false);
       done();
     });
+
+    it('Should return multiple paths', function(done) {
+      var answer = builder.buildAnswer(
+        { type: 'paths', from: 'a', to: 'z' },
+        {
+          rows: [
+            { id: 'a' },
+            { id: 'z' },
+            { id: null },
+            { id: 'a' },
+            { id: 'b' },
+            { id: 'z' },
+            { id: null },
+          ]
+        }
+      );
+
+      assert(areEqual(answer.paths, [['a', 'z'], ['a', 'b', 'z']]));
+      done();
+    });
+
   });
 
 });
 
 function areEqual(a1, a2) {
-  console.log ("Comparing " + JSON.stringify(a1) + " = " + JSON.stringify(a2));
-  console.log (JSON.stringify(a1) == JSON.stringify(a2));
   return JSON.stringify(a1) == JSON.stringify(a2);
 }

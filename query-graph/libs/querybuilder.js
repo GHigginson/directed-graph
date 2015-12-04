@@ -35,14 +35,10 @@ function escape(s) {
  * sql query for the query type.
  */
 function build(query) {
-  if (query.type == "cheapest") {
-    query.sql = util.format(
-      "SELECT * FROM dijkstra('g1','%s')", // TODO: no graphId in query obj
-      escape(query.from)
-    );
-  } else {
-    query.sql = "SELECT 1"; // TODO
-  }
+  var pattern = (query.type == "cheapest")
+    ? "SELECT unnest(dijkstra(null,'%s','%s')) AS id"
+    : "SELECT unnest(recursive_path_search(null,'%s','%s')) AS id";
+  query.sql = util.format(pattern, escape(query.from), escape(query.to));
   return query;
 }
 

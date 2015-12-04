@@ -26,41 +26,39 @@
  */
 
 /**
- * TODO
- */
-function buildPaths(query, result) {
-  return [['???','???']]; // TODO
-}
-
-/**
  * Constructs a single path from a cheapest-path query result. The rows
- * retrieved represent a tree in the format:
+ * retrieved are each node id in the path, and a terminal null, eg.
  *
- *   [{source_node:null,dest_node:'A'} .. {source_node:'Y',dest_node:'Z'}]
- *
- * Are not guaranteed to have either the desired source or target, and may
- * contain additional branches not on the path.
+ *   [{id : A} .. {id:'Z'}, {id:null}}]
  */
 function buildPath(query, result) {
   var path = [];
-
-  // Create a map of child node to parent node
-  var parentMap = {};
   result.rows.forEach(function(row) {
-    parentMap[row['dest_node']] = row['source_node'];
-  });
-
-  // Recurse the map from leaf to root, assembling path in reverse order
-  var node = query.to;
-  if (parentMap[node] === undefined) {
-    path = false;
-  } else {
-    while (node) {
-      path.unshift(node);
-      node = parentMap[node];
+    if (row && row.id) {
+      path.push(row.id);
     }
-  }
-  return path;
+  });
+  return path.length ? path : false;
+}
+
+/**
+ * Constructs a set of paths path from an all-paths query result. The rows
+ * retrieved are the concatenation of all the paths seen, in the same Format
+ * as the cheapest query paths, eg:
+ *
+ *   [{id : A} .. {id:'Z'}, {id:null}, {id : A} .. {id:'Z'}, {id:null}]
+ */
+function buildPaths(query, result) {
+  var paths = [], path = [];
+  result.rows.forEach(function(row) {
+    if (row && row.id) {
+      path.push(row.id);
+    } else if (path.length) {
+      paths.push(path);
+      path = [];
+    }
+  });
+  return paths.length ? paths : false;
 }
 
 /**

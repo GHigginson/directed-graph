@@ -7,20 +7,34 @@ var should = require('chai').should(),
 
 describe('Query Builder', function() {
 
-  describe('Positive Tests', function() {
-
-    it('TODO...', function(done) {
-      assert(false);
+  it('Should build cheapest queries', function(done) {
+    var query = builder.build({
+      type: 'cheapest',
+      from: 'a',
+      to: 'z'
     });
-
+    assert(0 <= query.sql.indexOf('dijkstra'));
+    done();
   });
 
-  describe('Negative Tests', function() {
-
-    it('TODO...', function(done) {
-      assert(false);
+  it('Should build paths queries', function(done) {
+    var query = builder.build({
+      type: 'paths',
+      from: 'a',
+      to: 'z'
     });
+    assert(0 <= query.sql.indexOf('recursive'));
+    done();
+  });
 
+  it('Should prevent sql injection', function(done) {
+    var query = builder.build({
+      type: 'paths',
+      from: '\'; delete from graphs; \'',
+      to: 'z'
+    });
+    assert(0 <= query.sql.indexOf('\\\''));
+    done();
   });
 
 });
