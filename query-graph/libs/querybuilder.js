@@ -9,13 +9,13 @@
  *   queries: [
  *     {
  *       type:"cheapest" ,
- *       from:"A",
- *       to:"Z"
+ *       start:"A",
+ *       end:"Z"
  *     },
  *     {
  *       type:"paths" ,
- *       from:"A",
- *       to:"Z"
+ *       start:"A",
+ *       end:"Z"
  *     },
        ...
  *   ]
@@ -38,7 +38,7 @@ function build(query) {
   var pattern = (query.type == "cheapest")
     ? "SELECT unnest(dijkstra(null,'%s','%s')) AS id"
     : "SELECT unnest(recursive_path_search(null,'%s','%s')) AS id";
-  query.sql = util.format(pattern, escape(query.from), escape(query.to));
+  query.sql = util.format(pattern, escape(query.start), escape(query.end));
   return query;
 }
 

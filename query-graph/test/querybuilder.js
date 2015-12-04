@@ -10,8 +10,8 @@ describe('Query Builder', function() {
   it('Should build cheapest queries', function(done) {
     var query = builder.build({
       type: 'cheapest',
-      from: 'a',
-      to: 'z'
+      start: 'a',
+      end: 'z'
     });
     assert(0 <= query.sql.indexOf('dijkstra'));
     done();
@@ -20,8 +20,8 @@ describe('Query Builder', function() {
   it('Should build paths queries', function(done) {
     var query = builder.build({
       type: 'paths',
-      from: 'a',
-      to: 'z'
+      start: 'a',
+      end: 'z'
     });
     assert(0 <= query.sql.indexOf('recursive'));
     done();
@@ -30,8 +30,8 @@ describe('Query Builder', function() {
   it('Should prevent sql injection', function(done) {
     var query = builder.build({
       type: 'paths',
-      from: '\'; delete from graphs; \'',
-      to: 'z'
+      start: '\'; delete from graphs; \'',
+      end: 'z'
     });
     assert(0 <= query.sql.indexOf('\\\''));
     done();
