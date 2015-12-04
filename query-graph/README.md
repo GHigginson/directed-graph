@@ -10,11 +10,33 @@ Requires nodejs + npm
     npm install
     npm test
 
-Must have previously created a postgres database using ../database/schema.sql
-Database settings can be configured in config.json
+Must have previously created a postgres database using [query-graph.sql](sql/query-graph.sql)
+Database settings can be configured in config.json.
 
 ## Usage
 
-    echo '{...}' | ./query-graph.js
+    node query-graph.js < query.json
+    echo '{...}' | node query-graph.js
 
 Query results will be returned on standard output.
+
+## Query Format
+
+```
+{
+  "queries" : [
+    {
+      "type" : "paths"
+      "start" : "id1",
+      "end" : "idN"
+    },
+    ...
+    {
+      "type" : "cheapest",
+      "start" : "id1",
+      "end" : "idN"
+    },
+    ...
+  ]
+}
+```
